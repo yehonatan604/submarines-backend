@@ -1,4 +1,4 @@
-import { model } from "mongoose";
+import mongoose, { model } from "mongoose";
 import { DbSchema } from "../../Services/DB/extensions/DbSchema.js";
 import {
     BOOLEAN_VALIDATION,
@@ -14,5 +14,4 @@ const UserSchema = new DbSchema({
     isVerified: BOOLEAN_VALIDATION(false, false),
 });
 
-const User = model("User", UserSchema);
-export default User;
+export default mongoose.models.User || model("User", UserSchema);

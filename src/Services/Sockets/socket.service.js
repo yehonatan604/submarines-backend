@@ -1,19 +1,39 @@
+import User from "../../Auth/Models/User.js";
 import { connectSocket, getIo } from "../../Middlewares/ioConnection.mw.js";
 import { print } from "../Logger/print.service.js";
 
 export const initializeSocketIO = (socketServer) => {
+    // Initialize Socket.IO server with the HTTP server and set up Middlewares
     const io = getIo(socketServer);
     connectSocket(io);
 
+    // Handle socket events
     io?.on("connection", (socket) => {
         const { _id } = socket.data.user;
         print(`✅ User connected: ${_id}`, "success");
         socket.emit("user-registered", _id);
 
         // Join lobby
-        socket.on("join-lobby", () => {
+        socket.on("join-lobby", async () => {
             socket.join("lobby");
+            socket.to("lobby").emit("user-joined", { userId: _id });
             print(`🎮 User ${_id} joined the lobby`, "info");
+
+            const allUsers = await User.find({}, "_id name");
+
+            let usersInLobby = Array.from(io.sockets.adapter.rooms.get("lobby") || []).map((socketId) => {
+                const userSocket = io.sockets.sockets.get(socketId);
+                const userId = userSocket?.data.user._id;
+                return allUsers.find((u) => u._id.toString() === userId?.toString());
+            }).filter(Boolean);
+
+            usersInLobby = usersInLobby.sort((a, b) => {
+                if (a._id.toString() === _id.toString()) return -1;
+                if (b._id.toString() === _id.toString()) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            socket.emit("available-users", usersInLobby);
         });
 
         // Send game invitation
