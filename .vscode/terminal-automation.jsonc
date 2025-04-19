@@ -1,0 +1,15 @@
+{
+    "open": [
+        [
+            {
+                "name": "dev",
+                "path": ".",
+                "command": "npm run dev"
+            }
+        ]
+    ],
+    "close": [
+        "killall",
+        "closeall"
+    ]
+}
